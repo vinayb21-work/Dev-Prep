@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  streak        Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  progress  UserProgress[]
+  bookmarks Bookmark[]
+  notes     Note[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model CodingProblem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @db.Text
+  difficulty  String
+  topics      String[]
+  hints       String[]
+  solution    String   @db.Text
+  companies   String[]
+  createdAt   DateTime @default(now())
+}
+
+model SystemDesignTopic {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  type        String
+  description String   @db.Text
+  content     String   @db.Text
+  difficulty  String
+  createdAt   DateTime @default(now())
+}
+
+model BehavioralQuestion {
+  id           String   @id @default(cuid())
+  question     String   @db.Text
+  category     String
+  sampleAnswer String   @db.Text
+  tips         String[]
+  createdAt    DateTime @default(now())
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  problemId   String
+  problemType String
+  status      String
+  timeSpent   Int      @default(0)
+  solvedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId, problemType])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  itemType  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId, itemType])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  itemType  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId, itemType])
+}
